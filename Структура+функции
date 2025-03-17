@@ -1,0 +1,226 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <ctime>
+#include <cstdlib>
+#include <algorithm>
+
+using std::vector;
+using std::string;
+using std::cin;
+using std::cout;
+using std::endl;
+using std::find;
+
+class Wheel {
+    public:
+        vector<int> points;
+        Wheel() {
+            points = {111, 350, 400, 450, 500, 600, 650, 700, 750, 777, 800, 850, 950, 1000}; //возможные очки
+        }
+    
+        int spin() {
+            return points[rand() % points.size()];
+        }
+
+};
+
+class Player {
+public:
+    Player(string name) : name(name), score(0) {}
+
+    string getName() const {
+        return name;
+    }
+
+    int getScore() const {
+        return score;
+    }
+
+    void addScore(int points) {
+        score += points;
+    }
+
+    void doubleScore() {
+        score *= 2;
+        // функция удваивания очков
+    }
+
+private:
+    string name;
+    int score;
+};
+
+class Game {
+public:
+    Game() {
+        words = {"программирование", "конста", "игра", "поле", "чудеса"}; // словарь слов
+        word = chooseWord();
+    }
+
+    void play() {
+        cout << "Добро пожаловать в тестирование игры 'Выживи или умри'!" << endl;
+
+        while (true) {
+            Player& currentPlayer = getCurrentPlayer();
+            cout << "Текущий игрок: " << currentPlayer.getName() << endl;
+            displayWord();
+
+            int spinResult = wheel.spin();
+            cout << "Вы крутите колесо и выпадает: " << spinResult << endl;
+
+            if (spinResult == 777 || spinResult == 111) {
+                sectorPrize();
+            } else if (spinResult > 0) {
+                char letter;
+                cout << "Назовите букву: ";
+                cin >> letter;
+
+                while(checkLetter(letter)) {
+                    cout << "Данная буква уже была загаданна, введите другую букву";
+                    cin >> letter;
+                }
+                
+                if (guessLetter(letter)) {
+                    int count = countSign(letter);
+                    currentPlayer.addScore(spinResult * count);
+                    cout << "Ваша буква встретилась " << count << " раз," << " вы получаете " << spinResult * count << " очков!" << '\n';
+                    displayWord();
+                    fullWord();
+                    continue;
+                } else {
+                    changePlayer();
+                }
+            }
+        }
+    }
+
+    void addPlayer(const Player& player) {
+        players.push_back(player);
+    }
+
+private:
+    vector<string> words;
+    vector<Player> players;
+    Wheel wheel;
+    string word;
+    vector<char> letters = {};
+    string fullGuess;
+    int CurrentPlayerIndex;
+
+    Player& getCurrentPlayer(){
+        // возвращает текущего игрока
+        return players[CurrentPlayerIndex];
+    }
+
+    void endGame(){
+        cout << "Игра окончена! Результаты: ";
+        cout << players[0].getName() << "набрал " << players[0].getScore() << "очков";
+        cout << players[1].getName() << "набрал " << players[1].getScore() << "очков";
+        // выводит результаты игры
+    }
+
+    void changePlayer(){
+        // переключение игрока
+        if (CurrentPlayerIndex == 0) CurrentPlayerIndex = 1;
+        else if (CurrentPlayerIndex == 1) CurrentPlayerIndex = 0;
+    }
+
+    bool checkLetter(char letter) {
+        // функция проверяет, была ли данная буква уже загадана или нет
+        if (find(letters.begin(), letters.end(), letter) == letters.end()) {
+            letters.push_back(letter);
+            return false; //буква не была названа
+        } else if (find(letters.begin(), letters.end(), letter) != letters.end()) {
+            return true;
+        }
+    }
+
+    void sectorPrize() {
+        cout << "Сектор приз на барабане! Вы выиграли автомобиль!" << '\n';
+        // функция сектор приз
+    }
+
+    void win() {
+        // функция победы
+        cout << "Поздравляем! Вы угадали слово!" << '\n';
+        endGame();
+    }
+
+    void lose() {
+        // функция проигрыша
+        cout << "Unlucky, вы не угадали слово!" << '\n';
+    }
+
+    void fullWord() {
+        // функция угадать всё слово
+        string decision;
+        cout << "Хотите назвать слово целиком? (да/нет): ";
+        cin >> decision;
+        if (decision == "да") {
+            cout << "Введите слово: ";
+            cin >> fullGuess;
+            if(guessWord(fullGuess)) {
+                win();
+            } else {
+                cout << "Лох";
+                changePlayer();
+            }
+        } else {
+            changePlayer();
+        }
+    }
+
+    string chooseWord() {
+        word = words[rand() % words.size()]; // функция, выбирающая слово из словаря
+        return word;
+    }
+
+
+
+    void displayWord (string& word, string& guessedLetters) { // выводит слово как маску с угаданными буквами
+        for (char letter : word) {
+            if (guessedLetters.find(letter) != string::npos) {
+                cout << letter;
+            } else {
+                cout << '_';
+            }
+        }
+        cout << endl;
+    }
+
+
+    bool guessLetter(char letter) {
+        if (find(word.begin(), word.end(), letter) != word.end()) {
+            cout <<"вы угадали";
+            return true;
+        } else {
+            cout << "Вы не угадали букву :(" << '\n';
+            return false;
+        }
+        // функция возвращающая, была ли угадана буква
+    }
+
+    int countSign(char letter) {
+        int counter = 0;
+        for (char ch : word) {
+            if (ch == letter) ++counter;
+        }
+        // количество угаданных букв за раз
+        return counter;
+    }
+
+    bool guessWord(const string& guess) {
+        // Функция проверяющая было ли слово угаданно
+        return guess == word; //это можно использовать в fullWord
+    }
+};
+
+int main() {
+    srand(static_cast<unsigned int>(time (0)));
+    Game game;
+    game.addPlayer(Player("Игрок 1"));
+    game.addPlayer(Player("Игрок 2"));
+    game.play();
+    return 0;
+}
